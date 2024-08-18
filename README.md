@@ -6,6 +6,8 @@ This project provides an API for processing and retrieving trading data using th
 
 - **Get Data**: Retrieve statistical data for a given trading symbol.
 - **Post Data**: Add new trading data for a given symbol.
+- **Concurrency**: Handles great concurrency thanks to Rayon and atomic operations.
+- **Performance**: Access times are constant time, ensuring efficient data retrieval and updates.
 
 ## Endpoints
 
@@ -67,6 +69,7 @@ Add new trading data for a given symbol.
 - [warp](https://crates.io/crates/warp): A super-easy, composable, web server framework for warp speeds.
 - [serde](https://crates.io/crates/serde): A framework for serializing and deserializing Rust data structures efficiently and generically.
 - [tokio](https://crates.io/crates/tokio): An asynchronous runtime for the Rust programming language.
+- [rayon](https://crates.io/crates/rayon): A data parallelism library for Rust, enabling efficient concurrent processing.
 
 ## License
 
