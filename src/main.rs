@@ -1,6 +1,5 @@
-use dashmap::DashMap;
-//use num_traits::atomic::AtomicF64;
 use atomic_float::AtomicF64;
+use dashmap::DashMap;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::{
@@ -9,6 +8,7 @@ use std::sync::{
 };
 use warp::Filter;
 
+// DashMap is perfect for this use case
 type TradingData = Arc<DashMap<String, (Vec<f64>, Statistics)>>;
 
 #[derive(Serialize, Deserialize)]
@@ -16,7 +16,7 @@ struct BatchToAdd {
     symbol: String,
     values: Vec<f64>,
 }
-
+// this holds our statistical data as Atomic variables to perform ops as fast as possible
 struct Statistics {
     min: AtomicF64,
     max: AtomicF64,
@@ -52,23 +52,27 @@ impl Statistics {
 }
 
 #[derive(Deserialize)]
-struct ToProcess {
+struct GetRequestJson {
     symbol: String,
     k: u32,
 }
 
 async fn get_data(
-    input_json: ToProcess,
+    input_json: GetRequestJson,
     data: TradingData,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let symbol = input_json.symbol;
     let k = input_json.k;
+    if k < 1 || k > 8 {
+        println!("k should be within 1 and 8");
+        return Ok(warp::reply::json(&"k should be within 1 and 8"));
+    }
 
     if let Some(entry) = data.get(&symbol) {
         let (values, stats) = entry.value();
         if values.is_empty() {
-            println!("No data available");
-            return Ok(warp::reply::json(&"No data available"));
+            println!("No data available for this symbol");
+            return Ok(warp::reply::json(&"No data available for this symbol"));
         }
 
         let n = 10usize.pow(k).min(stats.count.load(Ordering::SeqCst));
@@ -84,10 +88,8 @@ async fn get_data(
             var
         );
         println!("{}", response);
-
         return Ok(warp::reply::json(&response));
     }
-
     println!("Symbol not found");
     Ok(warp::reply::json(&"Symbol not found"))
 }
@@ -102,10 +104,11 @@ async fn post_data(
     use std::sync::Mutex;
 
     let values_mutex = Arc::new(Mutex::new(values));
-
+    // we try to keep the locking as minimal as possible
     item.values.par_iter().for_each(|&value| {
         let mut values = values_mutex.lock().unwrap();
         values.push(value);
+        // we precompute the stats here to give O(1) time complexity when getting the data
         stats.update(value);
     });
 
