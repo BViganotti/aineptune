@@ -1,0 +1,16 @@
+[package]
+name = "aineptune"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.39.2", features = ["full"] }
+#had to add tokio-macros manually
+tokio-macros = "2.4.0"
+warp = "0.3.7"
+serde = {version = "1.0.208" , features = ["derive"] }
+serde_json = "1.0.125"
+dashmap = "5.0"
+rayon = "1.5"
+num-traits = "0.2.19"
+atomic_float = "1.0.0"
